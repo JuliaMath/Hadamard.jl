@@ -92,6 +92,7 @@ for f in (:fwht, :fwht_natural, :fwht_dyadic)
         @assert norminf(X - $fi($f(X,1),1)) < 1e-14
         @assert norminf(X - $fi($f(X,2),2)) < 1e-14
         @assert norminf($f($f(X,1),2) - $f(X)) < 1e-14
+        @assert norminf($f(X',1)' - $f(X,2)) < 1e-14
     end
 end
 

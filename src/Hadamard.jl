@@ -125,11 +125,7 @@ function ifwht_dyadic{T<:fftwNumber}(X::StridedArray{T}, region)
 end
 
 function ifwht_dyadic{T<:Number}(X::StridedArray{T}, region)
-    X = T<:Complex ? complexfloat(X) : float(X)
-    Y = similar(X) # FFTW cannot do bit-reversal in-place
-    p = Plan_Hadamard(X, Y, region, ESTIMATE, NO_TIMELIMIT, true)
-    execute(p.plan, X, Y)
-    return Y
+    return ifwht_dyadic(T<:Complex ? complexfloat(X) : float(X), region)
 end
 
 ############################################################################
@@ -179,6 +175,16 @@ function ifwht{T<:fftwNumber}(X::StridedVector{T}, region)
     else
         return [ Y[1 + ((i >> 1) $ i)] for i = 0:length(Y)-1 ]
     end
+end
+
+# fallback for subarrays
+function ifwht{T<:fftwNumber}(X::StridedArray{T}, region)
+    return ifwht(copy(X), region)
+end
+
+# fallback for other types
+function ifwht{T<:Number}(X::StridedArray{T}, region)
+    return ifwht(T<:Complex ? complexfloat(X) : float(X), region)
 end
 
 ############################################################################

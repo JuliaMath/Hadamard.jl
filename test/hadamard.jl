@@ -27,12 +27,21 @@ H8d = [  1     1     1     1     1     1     1     1
          1    -1    -1     1     1    -1    -1     1
          1    -1    -1     1    -1     1     1    -1  ]
 
+ieye(n) = int8(eye(n))
+
 @assert ifwht(eye(8),1) == H8
 @assert ifwht(eye(8),2)' == H8
 @assert ifwht_natural(eye(8),1) == H8n
 @assert ifwht_natural(eye(8),2)' == H8n
 @assert ifwht_dyadic(eye(8),1) == H8d
 @assert ifwht_dyadic(eye(8),2)' == H8d
+
+@assert ifwht(ieye(8),1) == H8
+@assert ifwht(ieye(8),2)' == H8
+@assert ifwht_natural(ieye(8),1) == H8n
+@assert ifwht_natural(ieye(8),2)' == H8n
+@assert ifwht_dyadic(ieye(8),1) == H8d
+@assert ifwht_dyadic(ieye(8),2)' == H8d
 
 H32 = [  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
@@ -69,6 +78,9 @@ H32 = [  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 
 @assert ifwht(eye(32),1) == H32
 @assert ifwht(eye(32),2)' == H32
+
+@assert ifwht(ieye(32),1) == H32
+@assert ifwht(ieye(32),2)' == H32
 
 X = reshape(sin([1:1024*32]), 1024,32);
 norminf(A) = max(abs(A))

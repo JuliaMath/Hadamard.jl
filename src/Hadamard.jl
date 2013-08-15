@@ -6,13 +6,13 @@
 module Hadamard
 export fwht, ifwht, fwht_natural, ifwht_natural, fwht_dyadic, ifwht_dyadic, hadamard
 
-importall Base.FFTW
-import FFTW.set_timelimit
-import FFTW.dims_howmany
-import FFTW.Plan
-import FFTW.execute
-import FFTW.complexfloat
-import FFTW.normalization
+using Base.FFTW
+import Base.FFTW.set_timelimit
+import Base.FFTW.dims_howmany
+import Base.FFTW.Plan
+import Base.FFTW.execute
+import Base.FFTW.complexfloat
+import Base.FFTW.normalization
 
 power_of_two(n::Integer) = n > 0 && (n & (n - 1)) == 0
 

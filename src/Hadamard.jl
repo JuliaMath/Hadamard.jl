@@ -142,7 +142,7 @@ function ifwht{T<:fftwNumber}(X::Array{T}, region)
         return [ Y[1 + ((i >> 1) $ i)] for i = 0:length(Y)-1 ]
     else
         sz = [size(Y)...]
-        tmp = Array(T, max(sz[region])) # storage for out-of-place permutations
+        tmp = Array(T, maximum(sz[region])) # storage for out-of-place perm.
         for d in region
             # somewhat ugly loops to do 1d permutations along dimension d
             na = prod(sz[d+1:end])

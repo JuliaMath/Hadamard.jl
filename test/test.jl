@@ -83,7 +83,7 @@ H32 = [  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 @assert ifwht(ieye(32),2)' == H32
 
 X = reshape(sin([1:1024*32]), 1024,32);
-norminf(A) = max(abs(A))
+norminf(A) = maximum(abs(A))
 
 for f in (:fwht, :fwht_natural, :fwht_dyadic)
     fi = symbol(string("i", f))

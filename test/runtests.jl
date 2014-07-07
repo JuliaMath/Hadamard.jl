@@ -109,6 +109,6 @@ for i = 4:4:1000
     end)
     if !isempty(H)
         println("checking unitarity of hadamard($i)")
-        @test norm(H'*H - size(H,1)*I, 1) == 0
+        @test norm(H'*H - size(H,1)*eye(H), 1) == 0
     end
 end

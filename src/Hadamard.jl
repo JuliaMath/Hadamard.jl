@@ -201,23 +201,86 @@ for f in (:ifwht_natural, :ifwht_dyadic, :ifwht)
 end
 
 ############################################################################
-# create (floating-point) Hadamard matrix, similar to Matlab function,
-# in natural order.
+# Utilities to work with a precomputed cache of known Hadamard matrices
+# of various sizes, produced by util/fetchhadamard.jl from Sloane's web page
+# and stored as BitMatrices
+
+function readcache(cachefile::String)
+    B = BitMatrix[]
+    open(cachefile, "r") do io
+        while !eof(io)
+            k = int(ntoh(read(io, Int64)))
+            b = BitArray(k, k)
+            # Hack: use internal binary data from BitArray for efficiency
+            bits = read(io, eltype(b.chunks), length(b.chunks))
+            for i = 1:length(bits)
+                b.chunks[i] = ntoh(bits[i])
+            end
+            push!(B, b)
+        end
+    end
+    return B
+end
+readcache() = readcache(joinpath(Pkg.dir("Hadamard"), "src", "cache.dat"))
+
+function printsigns{T<:Real}(io::IO, A::AbstractMatrix{T})
+    m, n = size(A)
+    println(io, m, "x", n, " sign matrix from ", typeof(A))
+    for i = 1:m
+        for j = 1:n
+            print(io, A[i,j] > 0 ? "+" : "-")
+        end
+        println(io)
+    end
+end
+printsigns(A) = printsigns(STDOUT, A)
+
+function frombits(B::BitMatrix)
+    A = convert(Matrix{Int8}, B)
+    for i = 1:length(A)
+        A[i] = A[i] == 0 ? -1 : 1
+    end
+    return A
+end
+
+const hadamards = BitMatrix[] # read lazily below
+
+############################################################################
+# Create Int8 order-n Hadamard matrix (in natural order), by factorizing
+# n into a product of known Hadamard sizes (if possible)
+
+const H2 = Int8[1 1; 1 -1]
 
 function hadamard(n::Integer)
-    if power_of_two(n)
-        return ifwht_natural(eye(n), 1)
-    else
-        # Punt.  Matlab supports power-of-two multiples of 12 or 20,
-        # but lots of other sizes are known as well (see e.g. Sloane's
-        # web page http://neilsloane.com/hadamard/) and there is no
-        # particularly efficient way to construct them other than
-        # a look-up-table of known factors.  [Given Hadamard matrices Hm
-        # and Hn of sizes m and n, a Hadamard matrix of size mn is kron(Hm,Hn).]
-        # It is not really clear what factors are important to support,
-        # nor which of the (generally nonunique) Hadamard matrices to pick.
-        throw(ArgumentError("non power-of-two Hadamard matrices aren't supported"))
+    n < 1 && throw(ArgumentError("size n=$n should be positive"))
+    n0 = n
+    H = reshape(Int8[1], 1,1)
+    if !ispow2(n)
+        isempty(hadamards) && append!(hadamards, readcache())
+        for i = length(hadamards):-1:1
+            k = size(hadamards[i], 1)
+            if rem(n, k) == 0
+                Hk = frombits(hadamards[i])
+                while true
+                    H = kron(H, Hk)
+                    n = div(n, k)
+                    rem(n, k) != 0 && break
+                end
+            end
+        end
     end
+    if !ispow2(n)
+        n >>= trailing_zeros(n)
+        throw(ArgumentError("unknown Hadamard factor $n of $n0"))
+    end
+    # Note: it would be faster to do a "power-by-squaring" like algorithm
+    # here, where we repeatedly double the order via kron(H, H), but
+    # it's not clear to me that we care much about performance here.
+    while n > 1
+        H = kron(H, H2)
+        n >>= 1
+    end
+    return H
 end
 
 ############################################################################

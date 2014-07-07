@@ -48,10 +48,22 @@ and sums them to recover the signal, with no `n` factor.
   functions take the same arguments as `fwht` and `ifwht` and have the
   same normalizations, respectively.
 
-* Also provided is a function `hadamard(n)` which returns the
-  (natural-order) Hadamard matrix of order `n`, similar to the Matlab
-  function of the same name.  Currently, `n` must be a power of two,
-  in which case this function is equivalent to `ifwht_natural(eye(n), 1)`.
+## Hadamard matrices
+
+We also provide a a function `hadamard(n)` which returns a Hadamard
+matrix of order `n`, similar to the Matlab function of the same name.
+The known Hadamard matrices up to size 256 are currently supported
+(via a lookup table), along with products of these sizes and powers of
+two.
+
+The return value of `hadamard(n)` is a matrix of `Int8` values.  If
+you are planning to do matrix computations with this matrix, you may
+want to convert to `Int` or `Float64` first via `int(hadamard(n))` or
+`float(hadamard(n))`, respectively.
+
+For many sizes, the Hadamard matrix is not unique; the `hadamard`
+function returns an arbitrary choice.  For power-of-two sizes, the
+choice is equivalent to `ifwht_natural(eye(n), 1)`.
 
 ## Author
 

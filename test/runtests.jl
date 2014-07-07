@@ -1,4 +1,5 @@
 using Hadamard
+using Base.Test
 
 H8 = [   1     1     1     1     1     1     1     1
          1     1     1     1    -1    -1    -1    -1
@@ -29,19 +30,19 @@ H8d = [  1     1     1     1     1     1     1     1
 
 ieye(n) = int8(eye(n))
 
-@assert ifwht(eye(8),1) == H8
-@assert ifwht(eye(8),2)' == H8
-@assert ifwht_natural(eye(8),1) == H8n
-@assert ifwht_natural(eye(8),2)' == H8n
-@assert ifwht_dyadic(eye(8),1) == H8d
-@assert ifwht_dyadic(eye(8),2)' == H8d
+@test ifwht(eye(8),1) == H8
+@test ifwht(eye(8),2)' == H8
+@test ifwht_natural(eye(8),1) == H8n
+@test ifwht_natural(eye(8),2)' == H8n
+@test ifwht_dyadic(eye(8),1) == H8d
+@test ifwht_dyadic(eye(8),2)' == H8d
 
-@assert ifwht(ieye(8),1) == H8
-@assert ifwht(ieye(8),2)' == H8
-@assert ifwht_natural(ieye(8),1) == H8n
-@assert ifwht_natural(ieye(8),2)' == H8n
-@assert ifwht_dyadic(ieye(8),1) == H8d
-@assert ifwht_dyadic(ieye(8),2)' == H8d
+@test ifwht(ieye(8),1) == H8
+@test ifwht(ieye(8),2)' == H8
+@test ifwht_natural(ieye(8),1) == H8n
+@test ifwht_natural(ieye(8),2)' == H8n
+@test ifwht_dyadic(ieye(8),1) == H8d
+@test ifwht_dyadic(ieye(8),2)' == H8d
 
 H32 = [  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
@@ -76,11 +77,11 @@ H32 = [  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
  1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1
  1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 ]
 
-@assert ifwht(eye(32),1) == H32
-@assert ifwht(eye(32),2)' == H32
+@test ifwht(eye(32),1) == H32
+@test ifwht(eye(32),2)' == H32
 
-@assert ifwht(ieye(32),1) == H32
-@assert ifwht(ieye(32),2)' == H32
+@test ifwht(ieye(32),1) == H32
+@test ifwht(ieye(32),2)' == H32
 
 X = reshape(sin([1:1024*32]), 1024,32);
 norminf(A) = maximum(abs(A))
@@ -88,11 +89,26 @@ norminf(A) = maximum(abs(A))
 for f in (:fwht, :fwht_natural, :fwht_dyadic)
     fi = symbol(string("i", f))
     @eval begin
-        @assert norminf(X - $fi($f(X))) < 1e-14
-        @assert norminf(X - $fi($f(X,1),1)) < 1e-14
-        @assert norminf(X - $fi($f(X,2),2)) < 1e-14
-        @assert norminf($f($f(X,1),2) - $f(X)) < 1e-14
-        @assert norminf($f(X',1)' - $f(X,2)) < 1e-14
+        @test norminf(X - $fi($f(X))) < 1e-14
+        @test norminf(X - $fi($f(X,1),1)) < 1e-14
+        @test norminf(X - $fi($f(X,2),2)) < 1e-14
+        @test norminf($f($f(X,1),2) - $f(X)) < 1e-14
+        @test norminf($f(X',1)' - $f(X,2)) < 1e-14
     end
 end
 
+@test hadamard(8) == H8n
+@test ifwht_natural(eye(32), 1) == hadamard(32)
+@test ifwht_natural(eye(2), 1) == hadamard(2)
+
+for i = 4:4:1000
+    H = int(try
+        hadamard(i)
+    catch
+        Int[]
+    end)
+    if !isempty(H)
+        println("checking unitarity of hadamard($i)")
+        @test vecnorm(H'*H - size(H,1)*I) == 0
+    end
+end

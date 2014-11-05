@@ -14,6 +14,8 @@ import Base.FFTW.execute
 import Base.FFTW.complexfloat
 import Base.FFTW.normalization
 
+using Compat
+
 power_of_two(n::Integer) = n > 0 && (n & (n - 1)) == 0
 
 # A power-of-two dimension to be transformed is interpreted as a
@@ -205,7 +207,7 @@ end
 # of various sizes, produced by util/fetchhadamard.jl from Sloane's web page
 # and stored as BitMatrices
 
-function readcache(cachefile::String)
+function readcache(cachefile::AbstractString)
     B = BitMatrix[]
     open(cachefile, "r") do io
         while !eof(io)

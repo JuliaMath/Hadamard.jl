@@ -223,7 +223,7 @@ function readcache(cachefile::AbstractString)
     end
     return B
 end
-readcache() = readcache(joinpath(Pkg.dir("Hadamard"), "src", "cache.dat"))
+readcache() = readcache(joinpath(dirname(@__FILE__), "..", "src", "cache.dat"))
 
 function printsigns{T<:Real}(io::IO, A::AbstractMatrix{T})
     m, n = size(A)

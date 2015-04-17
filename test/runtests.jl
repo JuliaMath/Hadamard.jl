@@ -28,7 +28,7 @@ H8d = [  1     1     1     1     1     1     1     1
          1    -1    -1     1     1    -1    -1     1
          1    -1    -1     1    -1     1     1    -1  ]
 
-ieye(n) = int8(eye(n))
+ieye(n) = eye(Int8, n)
 
 @test ifwht(eye(8),1) == H8
 @test ifwht(eye(8),2)' == H8
@@ -83,7 +83,7 @@ H32 = [  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 @test ifwht(ieye(32),1) == H32
 @test ifwht(ieye(32),2)' == H32
 
-X = reshape(sin([1:1024*32]), 1024,32);
+X = reshape(sin([1:1024*32;]), 1024,32);
 norminf(A) = maximum(abs(A))
 
 for f in (:fwht, :fwht_natural, :fwht_dyadic)
@@ -102,11 +102,11 @@ end
 @test ifwht_natural(eye(2), 1) == hadamard(2)
 
 for i = 4:4:1000
-    H = int(try
-        hadamard(i)
+    H = try
+        convert(Matrix{Int}, hadamard(i))
     catch
         Int[]
-    end)
+    end
     if !isempty(H)
         println("checking unitarity of hadamard($i)")
         @test norm(H'*H - size(H,1)*eye(H), 1) == 0

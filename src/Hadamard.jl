@@ -48,7 +48,7 @@ function hadamardize(dims::Array{Int,2}, bitreverse::Bool)
             os *= 2
         end
         if bitreverse
-            hdims[3,krange] = fliplr(hdims[3,krange])
+            hdims[3,krange] = flipdim(hdims[3,krange], 2)
         end
         j += log2n
     end
@@ -211,7 +211,7 @@ function readcache(cachefile::AbstractString)
     B = BitMatrix[]
     open(cachefile, "r") do io
         while !eof(io)
-            k = int(ntoh(read(io, Int64)))
+            k = convert(Int, ntoh(read(io, Int64)))
             b = BitArray(k, k)
             # Hack: use internal binary data from BitArray for efficiency
             bits = read(io, eltype(b.chunks), length(b.chunks))

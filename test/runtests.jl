@@ -101,6 +101,7 @@ end
 @test ifwht_natural(eye(32), 1) == hadamard(32)
 @test ifwht_natural(eye(2), 1) == hadamard(2)
 
+print("Checking unitarity of hadamard(n): ")
 for i = 4:4:1000
     H = try
         convert(Matrix{Int}, hadamard(i))
@@ -108,7 +109,8 @@ for i = 4:4:1000
         Int[]
     end
     if !isempty(H)
-        println("checking unitarity of hadamard($i)")
+        print(i, ", ")
         @test norm(H'*H - size(H,1)*eye(H), 1) == 0
     end
 end
+println(".\nSuccess!")

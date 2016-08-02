@@ -2,21 +2,15 @@
 # using FFTW, by interpreting them as 2x2x2...x2x2 DFTs.  We follow Matlab's
 # convention in which ifwht is the unnormalized transform and fwht has a 1/N
 # normalization (as opposed to using a unitary normalization).
-
+__precompile__(true)
 module Hadamard
 export fwht, ifwht, fwht_natural, ifwht_natural, fwht_dyadic, ifwht_dyadic, hadamard
 
 using Base.FFTW
-import Base.FFTW.set_timelimit
-import Base.FFTW.dims_howmany
-import Base.FFTW.Plan
-import Base.FFTW.execute
-import Base.FFTW.complexfloat
-import Base.FFTW.normalization
+import Base.FFTW: set_timelimit, dims_howmany, unsafe_execute!, cFFTWPlan, r2rFFTWPlan, PlanPtr
+import Base.DFT: normalization, complexfloat
 
 using Compat
-
-power_of_two(n::Integer) = n > 0 && (n & (n - 1)) == 0
 
 # A power-of-two dimension to be transformed is interpreted as a
 # 2x2x2x....x2x2  multidimensional DFT.  This function transforms
@@ -27,7 +21,7 @@ function hadamardize(dims::Array{Int,2}, bitreverse::Bool)
     ntot = 0
     for i = 1:size(dims,2)
         n = dims[1,i]
-        if !power_of_two(n)
+        if !ispow2(n)
             throw(ArgumentError("non power-of-two Hadamard-transform length"))
         end
         ntot += trailing_zeros(n)
@@ -57,26 +51,26 @@ end
 
 for (Tr,Tc,fftw,lib) in ((:Float64,:Complex128,"fftw",FFTW.libfftw),
                          (:Float32,:Complex64,"fftwf",FFTW.libfftwf))
-    @eval function Plan_Hadamard(X::StridedArray{$Tc}, Y::StridedArray{$Tc},
-                                 region, flags::Unsigned, timelimit::Real, 
+    @eval function Plan_Hadamard{N}(X::StridedArray{$Tc,N}, Y::StridedArray{$Tc,N},
+                                 region, flags::Unsigned, timelimit::Real,
                                  bitreverse::Bool)
         set_timelimit($Tr, timelimit)
         dims, howmany = dims_howmany(X, Y, [size(X)...], region)
         dims = hadamardize(dims, bitreverse)
         plan = ccall(($(string(fftw,"_plan_guru64_dft")),$lib),
-                     Ptr{Void},
+                     PlanPtr,
                      (Int32, Ptr{Int}, Int32, Ptr{Int},
-                      Ptr{$Tc}, Ptr{$Tc}, Int32, Uint32),
+                      Ptr{$Tc}, Ptr{$Tc}, Int32, UInt32),
                      size(dims,2), dims, size(howmany,2), howmany,
                      X, Y, FFTW.FORWARD, flags)
         set_timelimit($Tr, NO_TIMELIMIT)
         if plan == C_NULL
             error("FFTW could not create plan") # shouldn't normally happen
         end
-        return Plan(plan, X)
+        return cFFTWPlan{$Tc,FFTW.FORWARD,X===Y,N}(plan, flags, region, X, Y)
     end
 
-    @eval function Plan_Hadamard(X::StridedArray{$Tr}, Y::StridedArray{$Tr},
+    @eval function Plan_Hadamard{N}(X::StridedArray{$Tr,N}, Y::StridedArray{$Tr,N},
                                  region, flags::Unsigned, timelimit::Real,
                                  bitreverse::Bool)
         set_timelimit($Tr, timelimit)
@@ -85,16 +79,16 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:Complex128,"fftw",FFTW.libfftw),
         kind = Array(Int32, size(dims,2))
         kind[:] = R2HC
         plan = ccall(($(string(fftw,"_plan_guru64_r2r")),$lib),
-                     Ptr{Void},
+                     PlanPtr,
                      (Int32, Ptr{Int}, Int32, Ptr{Int},
-                      Ptr{$Tr}, Ptr{$Tr}, Ptr{Int32}, Uint32),
+                      Ptr{$Tr}, Ptr{$Tr}, Ptr{Int32}, UInt32),
                      size(dims,2), dims, size(howmany,2), howmany,
                      X, Y, kind, flags)
         set_timelimit($Tr, NO_TIMELIMIT)
         if plan == C_NULL
             error("FFTW could not create plan") # shouldn't normally happen
         end
-        return Plan(plan, X)
+        return r2rFFTWPlan{$Tr,(map(Int,kind)...),X===Y,N}(plan, flags, region, X, Y)
     end
 end
 
@@ -106,14 +100,14 @@ end
 function ifwht_natural{T<:fftwNumber}(X::StridedArray{T}, region)
     Y = similar(X)
     p = Plan_Hadamard(X, Y, region, ESTIMATE, NO_TIMELIMIT, false)
-    execute(T, p.plan)
+    unsafe_execute!(p)
     return Y
 end
 
 function ifwht_natural{T<:Number}(X::StridedArray{T}, region)
-    Y = T<:Complex ? complexfloat(X) : float(X)
+    Y = float(X)
     p = Plan_Hadamard(Y, Y, region, ESTIMATE, NO_TIMELIMIT, false)
-    execute(p.plan, Y, Y)
+    unsafe_execute!(p)
     return Y
 end
 
@@ -122,12 +116,12 @@ end
 function ifwht_dyadic{T<:fftwNumber}(X::StridedArray{T}, region)
     Y = similar(X)
     p = Plan_Hadamard(X, Y, region, ESTIMATE, NO_TIMELIMIT, true)
-    execute(T, p.plan)
+    unsafe_execute!(p)
     return Y
 end
 
 function ifwht_dyadic{T<:Number}(X::StridedArray{T}, region)
-    return ifwht_dyadic(T<:Complex ? complexfloat(X) : float(X), region)
+    return ifwht_dyadic(float(X), region)
 end
 
 ############################################################################
@@ -186,7 +180,7 @@ end
 
 # fallback for other types
 function ifwht{T<:Number}(X::StridedArray{T}, region)
-    return ifwht(T<:Complex ? complexfloat(X) : float(X), region)
+    return ifwht(float(X), region)
 end
 
 ############################################################################
@@ -197,7 +191,7 @@ for f in (:ifwht_natural, :ifwht_dyadic, :ifwht)
     g = symbol(string(f)[2:end])
     @eval begin
         $f(X) = $f(X, 1:ndims(X))
-        $g(X) = scale!($f(X), normalization(X))
+        $g(X) = scale!($f(X), normalization(X,1:ndims(X)))
         $g(X,r) = scale!($f(X,r), normalization(X,r))
     end
 end

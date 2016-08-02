@@ -60,13 +60,12 @@ and sums them to recover the signal, with no `n` factor.
 We also provide a a function `hadamard(n)` which returns a Hadamard
 matrix of order `n`, similar to the Matlab function of the same name.
 The known Hadamard matrices up to size 256 are currently supported
-(via a lookup table), along with products of these sizes and powers of
-two.
+(via a lookup table), along with any size that factorizes into
+products of these known sizes and/or powers of two.
 
 The return value of `hadamard(n)` is a matrix of `Int8` values.  If
 you are planning to do matrix computations with this matrix, you may
-want to convert to `Int` or `Float64` first via `int(hadamard(n))` or
-`float(hadamard(n))`, respectively.
+want to convert to `Float64` first via `float(hadamard(n))`.
 
 For many sizes, the Hadamard matrix is not unique; the `hadamard`
 function returns an arbitrary choice.  For power-of-two sizes, the

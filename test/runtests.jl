@@ -87,7 +87,7 @@ X = reshape(sin([1:1024*32;]), 1024,32);
 norminf(A) = maximum(abs(A))
 
 for f in (:fwht, :fwht_natural, :fwht_dyadic)
-    fi = symbol(string("i", f))
+    fi = Symbol(string("i", f))
     @eval begin
         @test norminf(X - $fi($f(X))) < 1e-14
         @test norminf(X - $fi($f(X,1),1)) < 1e-14

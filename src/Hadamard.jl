@@ -188,7 +188,7 @@ end
 # without the region argument:
 
 for f in (:ifwht_natural, :ifwht_dyadic, :ifwht)
-    g = symbol(string(f)[2:end])
+    g = Symbol(string(f)[2:end])
     @eval begin
         $f(X) = $f(X, 1:ndims(X))
         $g(X) = scale!($f(X), normalization(X,1:ndims(X)))

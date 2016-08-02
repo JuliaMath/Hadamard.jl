@@ -42,7 +42,8 @@ function hadamardize(dims::Array{Int,2}, bitreverse::Bool)
             os *= 2
         end
         if bitreverse
-            hdims[3,krange] = flipdim(hdims[3,krange], 2)
+            a = hdims[3,krange] # size = 1x3 in Julia 0.4, = 3 in 0.5
+            hdims[3,krange] = flipdim(a, ndims(a))
         end
         j += log2n
     end

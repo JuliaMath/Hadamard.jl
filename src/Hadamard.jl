@@ -26,7 +26,7 @@ function hadamardize(dims::Array{Int,2}, bitreverse::Bool)
         end
         ntot += trailing_zeros(n)
     end
-    hdims = Array(Int,3,ntot)
+    hdims = Array{Int}(3,ntot)
     j = 0
     for i = 1:size(dims,2)
         n = dims[1,i]
@@ -77,7 +77,7 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:Complex128,"fftw",FFTW.libfftw),
         set_timelimit($Tr, timelimit)
         dims, howmany = dims_howmany(X, Y, [size(X)...], region)
         dims = hadamardize(dims, bitreverse)
-        kind = Array(Int32, size(dims,2))
+        kind = Array{Int32}(size(dims,2))
         kind[:] = R2HC
         plan = ccall(($(string(fftw,"_plan_guru64_r2r")),$lib),
                      PlanPtr,
@@ -139,7 +139,7 @@ function ifwht{T<:fftwNumber}(X::Array{T}, region)
         return [ Y[1 + ((i >> 1) $ i)] for i = 0:length(Y)-1 ]
     else
         sz = [size(Y)...]
-        tmp = Array(T, maximum(sz[region])) # storage for out-of-place perm.
+        tmp = Array{T}(maximum(sz[region])) # storage for out-of-place perm.
         for d in region
             # somewhat ugly loops to do 1d permutations along dimension d
             na = prod(sz[d+1:end])
@@ -150,7 +150,7 @@ function ifwht{T<:fftwNumber}(X::Array{T}, region)
                 for ib = 1:nb
                     i0 = ib + sa * ia
                     for i = 0:n-1
-                        tmp[i+1] = Y[i0 + nb * ((i >> 1) $ i)]
+                        tmp[i+1] = Y[i0 + nb * ((i >> 1) ⊻ i)]
                     end
                     for i = 0:n-1
                         Y[i0 + nb * i] = tmp[i+1]

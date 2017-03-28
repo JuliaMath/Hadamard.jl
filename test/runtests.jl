@@ -1,4 +1,4 @@
-using Hadamard
+using Hadamard, Compat
 using Base.Test
 
 H8 = [   1     1     1     1     1     1     1     1
@@ -83,8 +83,8 @@ H32 = [  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 @test ifwht(ieye(32),1) == H32
 @test ifwht(ieye(32),2)' == H32
 
-X = reshape(sin([1:1024*32;]), 1024,32);
-norminf(A) = maximum(abs(A))
+X = @compat reshape(sin.([1:1024*32;]), 1024,32);
+norminf(A) = @compat maximum(abs.(A))
 
 for f in (:fwht, :fwht_natural, :fwht_dyadic)
     fi = Symbol(string("i", f))

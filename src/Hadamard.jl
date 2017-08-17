@@ -136,7 +136,7 @@ function ifwht{T<:fftwNumber}(X::Array{T}, region)
     if isempty(region)
         return Y
     elseif ndims(Y) == 1
-        return [ Y[1 + ((i >> 1) $ i)] for i = 0:length(Y)-1 ]
+        return [ Y[1 + ((i >> 1) ⊻ i)] for i = 0:length(Y)-1 ]
     else
         sz = [size(Y)...]
         tmp = Array{T}(maximum(sz[region])) # storage for out-of-place perm.
@@ -170,7 +170,7 @@ function ifwht{T<:fftwNumber}(X::StridedVector{T}, region)
     if isempty(region)
         return Y
     else
-        return [ Y[1 + ((i >> 1) $ i)] for i = 0:length(Y)-1 ]
+        return [ Y[1 + ((i >> 1) ⊻ i)] for i = 0:length(Y)-1 ]
     end
 end
 

@@ -68,7 +68,11 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:ComplexF64,"fftw",libfftw),
                      X, Y, FFTW.FORWARD, flags)
         set_timelimit($Tr, NO_TIMELIMIT)
         if plan == C_NULL
-            error("FFTW could not create plan") # shouldn't normally happen
+            if $(occursin("libmkl", lib))
+                error("MKL is not supported — reconfigure FFTW.jl to use FFTW")
+            else
+                error("FFTW could not create plan") # shouldn't normally happen
+            end
         end
         return cFFTWPlan{$Tc,FFTW.FORWARD,X===Y,N}(plan, flags, region, X, Y)
     end
@@ -89,7 +93,11 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:ComplexF64,"fftw",libfftw),
                      X, Y, kind, flags)
         set_timelimit($Tr, NO_TIMELIMIT)
         if plan == C_NULL
-            error("FFTW could not create plan") # shouldn't normally happen
+            if $(occursin("libmkl", lib))
+                error("MKL is not supported — reconfigure FFTW.jl to use FFTW")
+            else
+                error("FFTW could not create plan") # shouldn't normally happen
+            end
         end
         return r2rFFTWPlan{$Tr,(map(Int,kind)...,),X===Y,N}(plan, flags, region, X, Y)
     end

@@ -3,9 +3,7 @@
 [![Build Status](https://travis-ci.org/stevengj/Hadamard.jl.svg?branch=master)](https://travis-ci.org/stevengj/Hadamard.jl)
 [![Coverage Status](https://coveralls.io/repos/stevengj/Hadamard.jl/badge.svg?branch=master)](https://coveralls.io/r/stevengj/Hadamard.jl?branch=master)
 
-[![Hadamard](http://pkg.julialang.org/badges/Hadamard_0.3.svg)](http://pkg.julialang.org/?pkg=Hadamard&ver=0.3)
-[![Hadamard](http://pkg.julialang.org/badges/Hadamard_0.4.svg)](http://pkg.julialang.org/?pkg=Hadamard&ver=0.4)
-[![Hadamard](http://pkg.julialang.org/badges/Hadamard_0.5.svg)](http://pkg.julialang.org/?pkg=Hadamard&ver=0.5)
+[![Hadamard](http://pkg.julialang.org/badges/Hadamard_0.6.svg)](http://pkg.julialang.org/?pkg=Hadamard&ver=0.6)
 
 This package provides functions to compute fast Walsh-Hadamard transforms
 in Julia, for arbitrary dimensions and arbitrary power-of-two transform sizes,

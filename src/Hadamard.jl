@@ -202,8 +202,8 @@ for f in (:ifwht_natural, :ifwht_dyadic, :ifwht)
     g = Symbol(string(f)[2:end])
     @eval begin
         $f(X) = $f(X, 1:ndims(X))
-        $g(X) = scale!($f(X), normalization(X,1:ndims(X)))
-        $g(X,r) = scale!($f(X,r), normalization(X,r))
+        $g(X) = Compat.rmul!($f(X), normalization(X,1:ndims(X)))
+        $g(X,r) = Compat.rmul!($f(X,r), normalization(X,r))
     end
 end
 
@@ -217,12 +217,8 @@ function readcache(cachefile::AbstractString)
     open(cachefile, "r") do io
         while !eof(io)
             k = convert(Int, ntoh(read(io, Int64)))
-            b = BitArray(k, k)
-            # Hack: use internal binary data from BitArray for efficiency
-            bits = read(io, eltype(b.chunks), length(b.chunks))
-            for i = 1:length(bits)
-                b.chunks[i] = ntoh(bits[i])
-            end
+            b = BitArray(undef, k, k)
+            b.chunks .= ntoh.(read!(io, b.chunks))
             push!(B, b)
         end
     end

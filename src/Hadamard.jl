@@ -2,13 +2,13 @@
 # using FFTW, by interpreting them as 2x2x2...x2x2 DFTs.  We follow Matlab's
 # convention in which ifwht is the unnormalized transform and fwht has a 1/N
 # normalization (as opposed to using a unitary normalization).
-__precompile__(true)
+__precompile__()
 module Hadamard
 export fwht, ifwht, fwht_natural, ifwht_natural, fwht_dyadic, ifwht_dyadic, hadamard
 
-using Base.FFTW
-import Base.FFTW: set_timelimit, dims_howmany, unsafe_execute!, cFFTWPlan, r2rFFTWPlan, PlanPtr
-import Base.DFT: normalization, complexfloat
+using FFTW
+import FFTW: set_timelimit, dims_howmany, unsafe_execute!, cFFTWPlan, r2rFFTWPlan, PlanPtr, fftwNumber, ESTIMATE, NO_TIMELIMIT, R2HC
+import AbstractFFTs: normalization, complexfloat
 
 using Compat
 
@@ -26,7 +26,7 @@ function hadamardize(dims::Array{Int,2}, bitreverse::Bool)
         end
         ntot += trailing_zeros(n)
     end
-    hdims = Array{Int}(3,ntot)
+    hdims = Array{Int}(undef, 3,ntot)
     j = 0
     for i = 1:size(dims,2)
         n = dims[1,i]
@@ -42,19 +42,21 @@ function hadamardize(dims::Array{Int,2}, bitreverse::Bool)
             os *= 2
         end
         if bitreverse
-            a = hdims[3,krange] # size = 1x3 in Julia 0.4, = 3 in 0.5
-            hdims[3,krange] = flipdim(a, ndims(a))
+            hdims[3,krange] = reverse(hdims[3,krange])
         end
         j += log2n
     end
     return hdims
 end
 
-for (Tr,Tc,fftw,lib) in ((:Float64,:Complex128,"fftw",FFTW.libfftw),
-                         (:Float32,:Complex64,"fftwf",FFTW.libfftwf))
-    @eval function Plan_Hadamard{N}(X::StridedArray{$Tc,N}, Y::StridedArray{$Tc,N},
+const libfftw = isdefined(FFTW, :libfftw) ? FFTW.libfftw : FFTW.libfftw3
+const libfftwf = isdefined(FFTW, :libfftwf) ? FFTW.libfftwf : FFTW.libfftw3f
+
+for (Tr,Tc,fftw,lib) in ((:Float64,:ComplexF64,"fftw",libfftw),
+                         (:Float32,:ComplexF32,"fftwf",libfftwf))
+    @eval function Plan_Hadamard(X::StridedArray{$Tc,N}, Y::StridedArray{$Tc,N},
                                  region, flags::Unsigned, timelimit::Real,
-                                 bitreverse::Bool)
+                                 bitreverse::Bool) where {N}
         set_timelimit($Tr, timelimit)
         dims, howmany = dims_howmany(X, Y, [size(X)...], region)
         dims = hadamardize(dims, bitreverse)
@@ -66,19 +68,23 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:Complex128,"fftw",FFTW.libfftw),
                      X, Y, FFTW.FORWARD, flags)
         set_timelimit($Tr, NO_TIMELIMIT)
         if plan == C_NULL
-            error("FFTW could not create plan") # shouldn't normally happen
+            if $(occursin("libmkl", lib))
+                error("MKL is not supported — reconfigure FFTW.jl to use FFTW")
+            else
+                error("FFTW could not create plan") # shouldn't normally happen
+            end
         end
         return cFFTWPlan{$Tc,FFTW.FORWARD,X===Y,N}(plan, flags, region, X, Y)
     end
 
-    @eval function Plan_Hadamard{N}(X::StridedArray{$Tr,N}, Y::StridedArray{$Tr,N},
+    @eval function Plan_Hadamard(X::StridedArray{$Tr,N}, Y::StridedArray{$Tr,N},
                                  region, flags::Unsigned, timelimit::Real,
-                                 bitreverse::Bool)
+                                 bitreverse::Bool) where {N}
         set_timelimit($Tr, timelimit)
         dims, howmany = dims_howmany(X, Y, [size(X)...], region)
         dims = hadamardize(dims, bitreverse)
-        kind = Array{Int32}(size(dims,2))
-        kind[:] = R2HC
+        kind = Array{Int32}(undef, size(dims,2))
+        kind .= R2HC
         plan = ccall(($(string(fftw,"_plan_guru64_r2r")),$lib),
                      PlanPtr,
                      (Int32, Ptr{Int}, Int32, Ptr{Int},
@@ -87,9 +93,13 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:Complex128,"fftw",FFTW.libfftw),
                      X, Y, kind, flags)
         set_timelimit($Tr, NO_TIMELIMIT)
         if plan == C_NULL
-            error("FFTW could not create plan") # shouldn't normally happen
+            if $(occursin("libmkl", lib))
+                error("MKL is not supported — reconfigure FFTW.jl to use FFTW")
+            else
+                error("FFTW could not create plan") # shouldn't normally happen
+            end
         end
-        return r2rFFTWPlan{$Tr,(map(Int,kind)...),X===Y,N}(plan, flags, region, X, Y)
+        return r2rFFTWPlan{$Tr,(map(Int,kind)...,),X===Y,N}(plan, flags, region, X, Y)
     end
 end
 
@@ -98,14 +108,14 @@ end
 
 # Natural (Hadamard) ordering:
 
-function ifwht_natural{T<:fftwNumber}(X::StridedArray{T}, region)
+function ifwht_natural(X::StridedArray{<:fftwNumber}, region)
     Y = similar(X)
     p = Plan_Hadamard(X, Y, region, ESTIMATE, NO_TIMELIMIT, false)
     unsafe_execute!(p)
     return Y
 end
 
-function ifwht_natural{T<:Number}(X::StridedArray{T}, region)
+function ifwht_natural(X::StridedArray{<:Number}, region)
     Y = float(X)
     p = Plan_Hadamard(Y, Y, region, ESTIMATE, NO_TIMELIMIT, false)
     unsafe_execute!(p)
@@ -114,14 +124,14 @@ end
 
 # Dyadic (Paley, bit-reversed) ordering:
 
-function ifwht_dyadic{T<:fftwNumber}(X::StridedArray{T}, region)
+function ifwht_dyadic(X::StridedArray{<:fftwNumber}, region)
     Y = similar(X)
     p = Plan_Hadamard(X, Y, region, ESTIMATE, NO_TIMELIMIT, true)
     unsafe_execute!(p)
     return Y
 end
 
-function ifwht_dyadic{T<:Number}(X::StridedArray{T}, region)
+function ifwht_dyadic(X::StridedArray{<:Number}, region)
     return ifwht_dyadic(float(X), region)
 end
 
@@ -129,7 +139,7 @@ end
 # Sequency (Walsh) ordering:
 
 # ifwht along a single dimension d of X
-function ifwht{T<:fftwNumber}(X::Array{T}, region)
+function ifwht(X::Array{T}, region) where {T<:fftwNumber}
     Y = ifwht_dyadic(X, region)
 
     # Perform Gray-code permutation of Y (TODO: in-place?)
@@ -139,7 +149,7 @@ function ifwht{T<:fftwNumber}(X::Array{T}, region)
         return [ Y[1 + ((i >> 1) ⊻ i)] for i = 0:length(Y)-1 ]
     else
         sz = [size(Y)...]
-        tmp = Array{T}(maximum(sz[region])) # storage for out-of-place perm.
+        tmp = Array{T}(undef, maximum(sz[region])) # storage for out-of-place perm.
         for d in region
             # somewhat ugly loops to do 1d permutations along dimension d
             na = prod(sz[d+1:end])
@@ -163,7 +173,7 @@ function ifwht{T<:fftwNumber}(X::Array{T}, region)
 end
 
 # handle 1d case of strided arrays (loops in multidim case are too annoying)
-function ifwht{T<:fftwNumber}(X::StridedVector{T}, region)
+function ifwht(X::StridedVector{<:fftwNumber}, region)
     Y = ifwht_dyadic(X, region)
 
     # Perform Gray-code permutation of Y (TODO: in-place?)
@@ -175,12 +185,12 @@ function ifwht{T<:fftwNumber}(X::StridedVector{T}, region)
 end
 
 # fallback for subarrays
-function ifwht{T<:fftwNumber}(X::StridedArray{T}, region)
+function ifwht(X::StridedArray{<:fftwNumber}, region)
     return ifwht(copy(X), region)
 end
 
 # fallback for other types
-function ifwht{T<:Number}(X::StridedArray{T}, region)
+function ifwht(X::StridedArray{<:Number}, region)
     return ifwht(float(X), region)
 end
 
@@ -192,8 +202,8 @@ for f in (:ifwht_natural, :ifwht_dyadic, :ifwht)
     g = Symbol(string(f)[2:end])
     @eval begin
         $f(X) = $f(X, 1:ndims(X))
-        $g(X) = scale!($f(X), normalization(X,1:ndims(X)))
-        $g(X,r) = scale!($f(X,r), normalization(X,r))
+        $g(X) = Compat.rmul!($f(X), normalization(X,1:ndims(X)))
+        $g(X,r) = Compat.rmul!($f(X,r), normalization(X,r))
     end
 end
 
@@ -207,12 +217,8 @@ function readcache(cachefile::AbstractString)
     open(cachefile, "r") do io
         while !eof(io)
             k = convert(Int, ntoh(read(io, Int64)))
-            b = BitArray(k, k)
-            # Hack: use internal binary data from BitArray for efficiency
-            bits = read(io, eltype(b.chunks), length(b.chunks))
-            for i = 1:length(bits)
-                b.chunks[i] = ntoh(bits[i])
-            end
+            b = BitArray(undef, k, k)
+            b.chunks .= ntoh.(read!(io, b.chunks))
             push!(B, b)
         end
     end
@@ -220,7 +226,7 @@ function readcache(cachefile::AbstractString)
 end
 readcache() = readcache(joinpath(dirname(@__FILE__), "..", "src", "cache.dat"))
 
-function printsigns{T<:Real}(io::IO, A::AbstractMatrix{T})
+function printsigns(io::IO, A::AbstractMatrix{<:Real})
     m, n = size(A)
     println(io, m, "x", n, " sign matrix from ", typeof(A))
     for i = 1:m
@@ -230,10 +236,10 @@ function printsigns{T<:Real}(io::IO, A::AbstractMatrix{T})
         println(io)
     end
 end
-printsigns(A) = printsigns(STDOUT, A)
+printsigns(A) = printsigns(stdout, A)
 
 function frombits(B::BitMatrix)
-    A = convert(Matrix{Int8}, B)
+    A = Matrix{Int8}(B)
     for i = 1:length(A)
         A[i] = A[i] == 0 ? -1 : 1
     end

@@ -2,7 +2,7 @@
 # using FFTW, by interpreting them as 2x2x2...x2x2 DFTs.  We follow Matlab's
 # convention in which ifwht is the unnormalized transform and fwht has a 1/N
 # normalization (as opposed to using a unitary normalization).
-__precompile__()
+VERSION < v"0.7.0-beta2.199" && __precompile__()
 module Hadamard
 export fwht, ifwht, fwht_natural, ifwht_natural, fwht_dyadic, ifwht_dyadic, hadamard
 

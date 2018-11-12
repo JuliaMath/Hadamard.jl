@@ -51,7 +51,8 @@ and sums them to recover the signal, with no `n` factor.
   (Hadamard) ordering with `fwht_natural` and `ifwht_natural`, or in the
   dyadic (Paley) ordering with `fwht_dyadic` and `ifwht_dyadic`.  These
   functions take the same arguments as `fwht` and `ifwht` and have the
-  same normalizations, respectively.
+  same normalizations, respectively.    The natural-order transforms also
+  have in-place variants `fwht_natural!` and `ifwht_natural!`.
 
 ## Hadamard matrices
 

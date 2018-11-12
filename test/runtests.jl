@@ -109,6 +109,11 @@ end
 @test ifwht_natural(I32, 1) == hadamard(32)
 @test ifwht_natural(Matrix{Float64}(I,2,2), 1) == hadamard(2)
 
+let X = copy(I32)
+    @test ifwht_natural!(X, 1) == X == hadamard(32)
+    @test fwht_natural!(X, 1) == X == I32
+end
+
 print("Checking unitarity of hadamard(n): ")
 sizes = Int[]
 for i = 4:4:1200

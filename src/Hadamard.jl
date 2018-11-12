@@ -15,7 +15,7 @@ There is also a function `hadamard(n)` that returns Hadamard matrices for known 
 (including non powers of two).
 """
 module Hadamard
-export fwht, ifwht, fwht_natural, ifwht_natural, fwht_dyadic, ifwht_dyadic, hadamard
+export fwht, ifwht, fwht_natural, ifwht_natural, fwht_natural!, ifwht_natural!, fwht_dyadic, ifwht_dyadic, hadamard
 
 using FFTW
 import FFTW: set_timelimit, dims_howmany, unsafe_execute!, cFFTWPlan, r2rFFTWPlan, PlanPtr, fftwNumber, ESTIMATE, NO_TIMELIMIT, R2HC
@@ -204,6 +204,29 @@ end
 function ifwht(X::StridedArray{<:Number}, region)
     return ifwht(float(X), region)
 end
+
+############################################################################
+# in-place transforms, currently for natural ordering only.
+
+"""
+    ifwht_natural!(X, dims=1:ndims(X))
+
+Similar to `ifwht_natural`, but works in-place on the input array `X`.
+"""
+function ifwht_natural!(X::StridedArray{<:fftwNumber}, region=1:ndims(X))
+    p = Plan_Hadamard(X, X, region, ESTIMATE, NO_TIMELIMIT, false)
+    unsafe_execute!(p)
+    return X
+end
+
+
+"""
+    fwht_natural!(X, dims=1:ndims(X))
+
+Similar to `fwht_natural`, but works in-place on the input array `X`.
+"""
+fwht_natural!(X::StridedArray{<:fftwNumber}, region=1:ndims(X)) =
+    Compat.rmul!(ifwht_natural!(X, region), normalization(X,region))
 
 ############################################################################
 # Forward transforms (normalized by 1/N as in Matlab) and transforms

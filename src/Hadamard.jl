@@ -222,6 +222,7 @@ function readcache(cachefile::AbstractString)
             push!(B, b)
         end
     end
+    sort!(B, by = h -> (isodd(size(h,1)>>2), size(h,1)))
     return B
 end
 readcache() = readcache(joinpath(dirname(@__FILE__), "..", "src", "cache.dat"))

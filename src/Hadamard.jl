@@ -203,8 +203,8 @@ end
 Similar to `ifwht_natural`, but works in-place on the input array `X`.
 """
 function ifwht_natural!(X::StridedArray{<:fftwNumber}, region=1:ndims(X))
-    p = Hadamard.Plan_Hadamard(X, X, region, ESTIMATE, NO_TIMELIMIT, false)
-    FFTW.unsafe_execute!(p)
+    p = Plan_Hadamard(X, X, region, ESTIMATE, NO_TIMELIMIT, false)
+    unsafe_execute!(p)
     return X
 end
 

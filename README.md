@@ -69,8 +69,8 @@ For many sizes, the Hadamard matrix is not unique; the `hadamard`
 function returns an arbitrary choice.  For power-of-two sizes, the
 choice is equivalent to `ifwht_natural(eye(n), 1)`.
 
-You can pretty-print a Hadamard matrices as a table of `+` and `-`
-(characters indicating the signs of the entries) via `Hadamard.printsigns`, e.g. `Hadamard.printsigns(hadamard(28))` for the 28x28 Hadamard matrix.
+You can pretty-print a Hadamard matrix as a table of `+` and `-`
+(characters indicating the signs of the entries) via `Hadamard.printsigns`, e.g. `Hadamard.printsigns(hadamard(28))` for the 28×28 Hadamard matrix.
 
 ## Author
 

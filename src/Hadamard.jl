@@ -3,6 +3,17 @@
 # convention in which ifwht is the unnormalized transform and fwht has a 1/N
 # normalization (as opposed to using a unitary normalization).
 VERSION < v"0.7.0-beta2.199" && __precompile__()
+
+"""
+The `Hadamard` module provides functions to compute fast Walsh-Hadamard transforms in Julia,
+for arbitrary dimensions and arbitrary power-of-two transform sizes, with the three standard
+orderings: natural (Hadamard), dyadic (Paley), and sequency (Walsh) ordering.
+See the `fwht`, `fwht_natural`, and `fwht_dyadic` functions, along with their inverses
+`ifwht` etc.
+
+There is also a function `hadamard(n)` that returns Hadamard matrices for known sizes
+(including non powers of two).
+"""
 module Hadamard
 export fwht, ifwht, fwht_natural, ifwht_natural, fwht_dyadic, ifwht_dyadic, hadamard
 
@@ -208,6 +219,33 @@ for f in (:ifwht_natural, :ifwht_dyadic, :ifwht)
 end
 
 ############################################################################
+# Docstrings — since they are all very similar, we
+# assign them in a loop.
+
+for inverse in (true, false), ord in (:natural, :dyadic, :sequency)
+    name = (inverse ? "i" : "") * "fwht"
+    if ord != :sequency
+        name = string(name, '_', ord)
+    end
+    ordstr = ord == :natural ? "natural (Hadamard)" :
+             ord == :dyadic ? "dyadic (Paley, bit-reversed)" :
+             "sequency"
+    docstring = """    $name(X, dims=1:ndims(X))
+
+Return the$(inverse ? " inverse" : "") fast Walsh-Hadamard transform (WHT) of
+the array `X` along the dimensions `dims` (an integer,
+tuple, or array of dimensions, defaulting to all dimensions).
+Only power-of-two sizes (along the transformed dimensions)
+are supported.  The result is returned in the $ordstr ordering.
+
+Our WHT is normalized so that the forward transform has a `1/n`
+coefficient (where `n` is the product of the transformed dimensions)
+and the inverse WHT has no scaling factor.
+"""
+    @eval @doc $docstring $(Symbol(name))
+end
+
+############################################################################
 # Utilities to work with a precomputed cache of known Hadamard matrices
 # of various sizes, produced by util/fetchhadamard.jl from Sloane's web page
 # and stored as BitMatrices
@@ -226,12 +264,19 @@ function readcache(cachefile::AbstractString)
 end
 readcache() = readcache(joinpath(dirname(@__FILE__), "..", "src", "cache.dat"))
 
+"""
+    printsigns([io, ] A)
+
+Print a table of `+` and `-` characters indicating the
+signs of the entries of `A` (with `0` for zero entries).
+The output stream `io` defaults to `stdout`.
+"""
 function printsigns(io::IO, A::AbstractMatrix{<:Real})
     m, n = size(A)
-    println(io, m, "x", n, " sign matrix from ", typeof(A))
+    println(io, m, "×", n, " sign matrix from ", typeof(A))
     for i = 1:m
         for j = 1:n
-            print(io, A[i,j] > 0 ? "+" : "-")
+            print(io, A[i,j] > 0 ? '+' : A[i,j] < 0 ? '-' : '0')
         end
         println(io)
     end
@@ -254,6 +299,22 @@ const hadamards = BitMatrix[] # read lazily below
 
 const H2 = Int8[1 1; 1 -1]
 
+"""
+    hadamard(n)
+
+Return a Hadamard matrix of order `n`.  The known Hadamard
+matrices up to size 256 are currently supported (via a lookup table),
+along with any size that factorizes into products of these known
+sizes and/or powers of two.
+
+The return value is a matrix of `Int8` values. If you want to do
+further matrix computations with this matrix, you may want to
+convert to `Float64` first via `float(hadamard(n))`.
+
+You can pretty-print a Hadamard matrix as a table of `+` and `-`
+(indicating the signs of the entries) via `Hadamard.printsigns`,
+e.g. `Hadamard.printsigns(hadamard(28))` for the 28×28 Hadamard matrix.
+"""
 function hadamard(n::Integer)
     n < 1 && throw(ArgumentError("size n=$n should be positive"))
     n0 = n

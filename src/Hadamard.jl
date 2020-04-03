@@ -2,7 +2,6 @@
 # using FFTW, by interpreting them as 2x2x2...x2x2 DFTs.  We follow Matlab's
 # convention in which ifwht is the unnormalized transform and fwht has a 1/N
 # normalization (as opposed to using a unitary normalization).
-VERSION < v"0.7.0-beta2.199" && __precompile__()
 
 """
 The `Hadamard` module provides functions to compute fast Walsh-Hadamard transforms in Julia,
@@ -17,11 +16,9 @@ There is also a function `hadamard(n)` that returns Hadamard matrices for known 
 module Hadamard
 export fwht, ifwht, fwht_natural, ifwht_natural, fwht_natural!, ifwht_natural!, fwht_dyadic, ifwht_dyadic, hadamard
 
-using FFTW
+using FFTW, LinearAlgebra
 import FFTW: set_timelimit, dims_howmany, unsafe_execute!, cFFTWPlan, r2rFFTWPlan, PlanPtr, fftwNumber, ESTIMATE, NO_TIMELIMIT, R2HC
 import AbstractFFTs: normalization, complexfloat
-
-using Compat
 
 # A power-of-two dimension to be transformed is interpreted as a
 # 2x2x2x....x2x2  multidimensional DFT.  This function transforms
@@ -226,7 +223,7 @@ end
 Similar to `fwht_natural`, but works in-place on the input array `X`.
 """
 fwht_natural!(X::StridedArray{<:fftwNumber}, region=1:ndims(X)) =
-    Compat.rmul!(ifwht_natural!(X, region), normalization(X,region))
+    rmul!(ifwht_natural!(X, region), normalization(X,region))
 
 ############################################################################
 # Forward transforms (normalized by 1/N as in Matlab) and transforms
@@ -236,8 +233,8 @@ for f in (:ifwht_natural, :ifwht_dyadic, :ifwht)
     g = Symbol(string(f)[2:end])
     @eval begin
         $f(X) = $f(X, 1:ndims(X))
-        $g(X) = Compat.rmul!($f(X), normalization(X,1:ndims(X)))
-        $g(X,r) = Compat.rmul!($f(X,r), normalization(X,r))
+        $g(X) = rmul!($f(X), normalization(X,1:ndims(X)))
+        $g(X,r) = rmul!($f(X,r), normalization(X,r))
     end
 end
 

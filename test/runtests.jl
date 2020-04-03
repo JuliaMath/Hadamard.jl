@@ -1,5 +1,4 @@
-using Hadamard, Compat
-using Compat.Test, Compat.LinearAlgebra
+using Hadamard, Test, LinearAlgebra
 
 H8 = [   1     1     1     1     1     1     1     1
          1     1     1     1    -1    -1    -1    -1

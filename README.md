@@ -1,6 +1,6 @@
 # Fast multidimensional Walsh-Hadamard transforms
 
-[![Build Status](https://travis-ci.org/stevengj/Hadamard.jl.svg?branch=master)](https://travis-ci.org/stevengj/Hadamard.jl)
+[![Build Status](https://travis-ci.org/JuliaMath/Hadamard.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Hadamard.jl)
 
 This package provides functions to compute fast Walsh-Hadamard transforms
 in Julia, for arbitrary dimensions and arbitrary power-of-two transform sizes,

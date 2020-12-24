@@ -1,7 +1,5 @@
 # Fast multidimensional Walsh-Hadamard transforms
 
-[![Build Status](https://travis-ci.org/JuliaMath/Hadamard.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Hadamard.jl)
-
 This package provides functions to compute fast Walsh-Hadamard transforms
 in Julia, for arbitrary dimensions and arbitrary power-of-two transform sizes,
 with the three standard orderings: natural (Hadamard), dyadic (Paley), and

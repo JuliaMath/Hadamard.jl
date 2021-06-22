@@ -68,7 +68,7 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:ComplexF64,"fftw",libfftw),
         set_timelimit($Tr, timelimit)
         dims, howmany = dims_howmany(X, Y, [size(X)...], region)
         dims = hadamardize(dims, bitreverse)
-        plan = ccall(($(string(fftw,"_plan_guru64_dft")),$lib),
+        plan = ccall(($(string(fftw,"_plan_guru64_dft")),$lib[]),
                      PlanPtr,
                      (Int32, Ptr{Int}, Int32, Ptr{Int},
                       Ptr{$Tc}, Ptr{$Tc}, Int32, UInt32),
@@ -93,7 +93,7 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:ComplexF64,"fftw",libfftw),
         dims = hadamardize(dims, bitreverse)
         kind = Array{Int32}(undef, size(dims,2))
         kind .= R2HC
-        plan = ccall(($(string(fftw,"_plan_guru64_r2r")),$lib),
+        plan = ccall(($(string(fftw,"_plan_guru64_r2r")),$lib[]),
                      PlanPtr,
                      (Int32, Ptr{Int}, Int32, Ptr{Int},
                       Ptr{$Tr}, Ptr{$Tr}, Ptr{Int32}, UInt32),

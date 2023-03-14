@@ -1,6 +1,6 @@
 name = "Hadamard"
 uuid = "4a05ff16-5f95-55f4-bb53-bb3f467c689a"
-version = "1.4.0"
+version = "1.5.0"
 
 [deps]
 AbstractFFTs = "621f4979-c628-5d54-868e-fcf4e3e8185c"

@@ -107,7 +107,7 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:ComplexF64,"fftw",libfftw),
                 error("FFTW could not create plan") # shouldn't normally happen
             end
         end
-        return r2rFFTWPlan{$Tr,(map(Int,kind)...,),X===Y,N}(plan, flags, region, X, Y)
+        return r2rFFTWPlan{$Tr,Vector{Int32},X===Y,N}(plan, flags, region, X, Y, kind)
     end
 end
 

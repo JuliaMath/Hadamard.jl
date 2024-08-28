@@ -14,7 +14,7 @@ There is also a function `hadamard(n)` that returns Hadamard matrices for known 
 (including non powers of two).
 """
 module Hadamard
-export fwht, ifwht, fwht_natural, ifwht_natural, fwht_natural!, ifwht_natural!, fwht_dyadic, ifwht_dyadic, hadamard
+export fwht, ifwht, fwht_natural, ifwht_natural, fwht_natural!, ifwht_natural!, fwht_dyadic, ifwht_dyadic, hadamard, walsh
 
 using FFTW, LinearAlgebra
 import FFTW: set_timelimit, dims_howmany, unsafe_execute!, cFFTWPlan, r2rFFTWPlan, PlanPtr, fftwNumber, ESTIMATE, NO_TIMELIMIT, R2HC
@@ -366,6 +366,21 @@ function hadamard(n::Integer)
         n >>= 1
     end
     return H
+end
+
+"""
+    walsh(n)
+
+Return a Walsh matrix of order `n`. by bit-reversal permutation of a Hadamard matrix.
+"""
+function walsh(n::Integer)
+    m = Int(round(log2(n))) + 1 # number of bits to represent the index
+    e = sizeof(Int)*8 - m       # number of extra bits
+    i = 0:n-1                   # Hadamard index
+    j = bitreverse.(i) .>> e    # bit reversing of the binary index
+    j = j .⊻ (j .>> 1)          # binary sequency index
+
+    return hadamard(n)[j.+1,:]
 end
 
 ############################################################################

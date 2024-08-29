@@ -371,16 +371,28 @@ end
 """
     walsh(n)
 
-Return a Walsh matrix of order `n`. by bit-reversal permutation of a Hadamard matrix.
-"""
-function walsh(n::Integer)
-    m = Int(round(log2(n))) + 1 # number of bits to represent the index
-    e = sizeof(Int)*8 - m       # number of extra bits
-    i = 0:n-1                   # Hadamard index
-    j = bitreverse.(i) .>> e    # bit reversing of the binary index
-    j = j .⊻ (j .>> 1)          # binary sequency index
+Return a Walsh matrix of order `n`, which must be a power of two, in sequency ordering. 
+This is related to the Hadamard matrix [`hadamard(n)`](@ref) by a bit-reversal permutation
+followed by a Gray-code permutation of the rows.
 
-    return hadamard(n)[j.+1,:]
+Note that the linear operation `walsh(n) * x` can be computed much more efficiently, albeit
+in floating-point arithmetic, by `fwht(x) * n` (where the `* n` is due to the differing normalization,
+and can usually be eliminated by adjusting how you use the resulting vector) using the
+sequency-ordered fast Walsh–Hadamard transform function [`fwht`](@ref).
+"""
+walsh(n::Integer) = walsh(Int(n))
+
+function walsh(n::Int)
+    ispow2(n) || throw(ArgumentError("n=$n is not a power of two"))
+    m = trailing_zeros(n) + 1 # number of bits to represent the index
+    e = sizeof(Int)*8 - m       # number of extra bits
+    j = [ let b = bitreverse(i) >> e # bit-reverse the binary index (trailing m bits)
+              j = b ⊻ (b >> 1) # binary sequency index
+              j + 1 # 1-based index
+          end
+          for i in 0:n-1 ] 
+
+    return hadamard(n)[j, :]
 end
 
 ############################################################################

@@ -68,6 +68,11 @@ choice is equivalent to `ifwht_natural(eye(n), 1)`.
 You can pretty-print a Hadamard matrix as a table of `+` and `-`
 (characters indicating the signs of the entries) via `Hadamard.printsigns`, e.g. `Hadamard.printsigns(hadamard(28))` for the 28×28 Hadamard matrix.
 
+You can also obtain a Walsh matrix (sequency-ordered Hadamard matrix) of
+order `n` by using the function `walsh(n)`; the order `n` *must* be powers
+of two. This function is related to the Hadamard matrix `hadamard(n)` by
+a bit-reversal permutation followed by a Gray-code permutation of the rows.
+
 ## Author
 
 This package was written by [Steven G. Johnson](http://math.mit.edu/~stevenj/).

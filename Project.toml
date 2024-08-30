@@ -1,6 +1,6 @@
 name = "Hadamard"
 uuid = "4a05ff16-5f95-55f4-bb53-bb3f467c689a"
-version = "1.5.0"
+version = "1.6.0"
 
 [deps]
 AbstractFFTs = "621f4979-c628-5d54-868e-fcf4e3e8185c"
@@ -11,6 +11,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 julia = "1.6"
 AbstractFFTs = "0.4,0.5,1"
 FFTW = "1.6"
+LinearAlgebra = "<0.0.1, 1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

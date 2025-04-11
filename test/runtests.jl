@@ -123,7 +123,7 @@ end
         H = try
             Matrix{Int}(hadamard(i))
         catch
-            Int[;;]
+            Matrix{Int}(undef,0,0)
         end
         if !isempty(H)
             # print(i, ", ")

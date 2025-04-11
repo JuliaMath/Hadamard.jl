@@ -17,8 +17,8 @@ module Hadamard
 export fwht, ifwht, fwht_natural, ifwht_natural, fwht_natural!, ifwht_natural!, fwht_dyadic, ifwht_dyadic, hadamard, walsh
 
 using FFTW, LinearAlgebra
-import FFTW: set_timelimit, dims_howmany, unsafe_execute!, cFFTWPlan, r2rFFTWPlan, PlanPtr, fftwNumber, ESTIMATE, NO_TIMELIMIT, R2HC
-import AbstractFFTs: normalization, complexfloat
+using FFTW: unsafe_set_timelimit, @exclusive, dims_howmany, unsafe_execute!, cFFTWPlan, r2rFFTWPlan, PlanPtr, fftwNumber, ESTIMATE, NO_TIMELIMIT, R2HC
+using AbstractFFTs: normalization, complexfloat
 
 # A power-of-two dimension to be transformed is interpreted as a
 # 2x2x2x....x2x2  multidimensional DFT.  This function transforms
@@ -62,11 +62,12 @@ const libfftwf = isdefined(FFTW, :libfftwf) ? FFTW.libfftwf : FFTW.libfftw3f
 
 for (Tr,Tc,fftw,lib) in ((:Float64,:ComplexF64,"fftw",libfftw),
                          (:Float32,:ComplexF32,"fftwf",libfftwf))
-    @eval function Plan_Hadamard(X::StridedArray{$Tc,N}, Y::StridedArray{$Tc,N},
+    @eval @exclusive function Plan_Hadamard(X::StridedArray{$Tc,N}, Y::StridedArray{$Tc,N},
                                  region, flags::Unsigned, timelimit::Real,
                                  bitreverse::Bool) where {N}
-        set_timelimit($Tr, timelimit)
-        dims, howmany = dims_howmany(X, Y, [size(X)...], region)
+        unsafe_set_timelimit($Tr, timelimit)
+        R = isa(region, Tuple) ? region : copy(region)
+        dims, howmany = dims_howmany(X, Y, size(X), R)
         dims = hadamardize(dims, bitreverse)
         plan = ccall(($(string(fftw,"_plan_guru64_dft")),$lib[]),
                      PlanPtr,
@@ -74,7 +75,7 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:ComplexF64,"fftw",libfftw),
                       Ptr{$Tc}, Ptr{$Tc}, Int32, UInt32),
                      size(dims,2), dims, size(howmany,2), howmany,
                      X, Y, FFTW.FORWARD, flags)
-        set_timelimit($Tr, NO_TIMELIMIT)
+        unsafe_set_timelimit($Tr, NO_TIMELIMIT)
         if plan == C_NULL
             if $(FFTW.fftw_provider == "mkl")
                 error("MKL is not supported — reconfigure FFTW.jl to use FFTW")
@@ -82,14 +83,15 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:ComplexF64,"fftw",libfftw),
                 error("FFTW could not create plan") # shouldn't normally happen
             end
         end
-        return cFFTWPlan{$Tc,FFTW.FORWARD,X===Y,N}(plan, flags, region, X, Y)
+        return cFFTWPlan{$Tc,FFTW.FORWARD,X===Y,N}(plan, flags, R, X, Y)
     end
 
-    @eval function Plan_Hadamard(X::StridedArray{$Tr,N}, Y::StridedArray{$Tr,N},
+    @eval @exclusive function Plan_Hadamard(X::StridedArray{$Tr,N}, Y::StridedArray{$Tr,N},
                                  region, flags::Unsigned, timelimit::Real,
                                  bitreverse::Bool) where {N}
-        set_timelimit($Tr, timelimit)
-        dims, howmany = dims_howmany(X, Y, [size(X)...], region)
+        unsafe_set_timelimit($Tr, timelimit)
+        R = isa(region, Tuple) ? region : copy(region)
+        dims, howmany = dims_howmany(X, Y, size(X), R)
         dims = hadamardize(dims, bitreverse)
         kind = Array{Int32}(undef, size(dims,2))
         kind .= R2HC
@@ -99,7 +101,7 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:ComplexF64,"fftw",libfftw),
                       Ptr{$Tr}, Ptr{$Tr}, Ptr{Int32}, UInt32),
                      size(dims,2), dims, size(howmany,2), howmany,
                      X, Y, kind, flags)
-        set_timelimit($Tr, NO_TIMELIMIT)
+        unsafe_set_timelimit($Tr, NO_TIMELIMIT)
         if plan == C_NULL
             if $(FFTW.fftw_provider == "mkl")
                 error("MKL is not supported — reconfigure FFTW.jl to use FFTW")
@@ -107,7 +109,7 @@ for (Tr,Tc,fftw,lib) in ((:Float64,:ComplexF64,"fftw",libfftw),
                 error("FFTW could not create plan") # shouldn't normally happen
             end
         end
-        return r2rFFTWPlan{$Tr,Vector{Int32},X===Y,N}(plan, flags, region, X, Y, kind)
+        return r2rFFTWPlan{$Tr,Vector{Int32},X===Y,N}(plan, flags, R, X, Y, kind)
     end
 end
 
@@ -371,7 +373,7 @@ end
 """
     walsh(n)
 
-Return a Walsh matrix of order `n`, which must be a power of two, in sequency ordering. 
+Return a Walsh matrix of order `n`, which must be a power of two, in sequency ordering.
 This is related to the Hadamard matrix [`hadamard(n)`](@ref) by a bit-reversal permutation
 followed by a Gray-code permutation of the rows.
 
@@ -390,7 +392,7 @@ function walsh(n::Int)
               j = b ⊻ (b >> 1) # binary sequency index
               j + 1 # 1-based index
           end
-          for i in 0:n-1 ] 
+          for i in 0:n-1 ]
 
     return hadamard(n)[j, :]
 end
